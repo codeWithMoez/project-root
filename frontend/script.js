@@ -1,30 +1,51 @@
-const apiUrl = "http://localhost:5000/api/todos";
+const apiUrl = 'http://localhost:5000/items';
 
-async function fetchTodos() {
-  const response = await fetch(apiUrl);
-  const todos = await response.json();
-  document.getElementById("todo-list").innerHTML = todos
-    .map(
-      (todo) =>
-        `<li>${todo.text} <button onclick="deleteTodo('${todo._id}')">Delete</button></li>`
-    )
-    .join("");
-}
+// Add a new item
+document.getElementById('itemForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-async function addTodo() {
-  const text = document.getElementById("todo-input").value;
-  await fetch(apiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+  const name = document.getElementById('name').value;
+  const description = document.getElementById('description').value;
+
+  const newItem = { name, description };
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newItem)
   });
-  document.getElementById("todo-input").value = "";
-  fetchTodos();
+
+  const item = await response.json();
+  fetchItems(); // Refresh the item list
+  document.getElementById('itemForm').reset();
+});
+
+// Fetch and display items
+async function fetchItems() {
+  const response = await fetch(apiUrl);
+  const items = await response.json();
+
+  const itemList = document.getElementById('itemList');
+  itemList.innerHTML = ''; // Clear the list before repopulating
+
+  items.forEach(item => {
+    const li = document.createElement('li');
+    li.innerHTML = `${item.name} - ${item.description} 
+                    <button onclick="deleteItem('${item._id}')">Delete</button>`;
+    itemList.appendChild(li);
 }
 
-async function deleteTodo(id) {
-  await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
-  fetchTodos();
+// Delete an item
+async function deleteItem(id) {
+  const response = await fetch(`http://localhost:5000/items/${id}`, { method: 'DELETE' });
+
+  if (response.ok) {
+    alert('Item deleted successfully');
+    fetchItems(); // Refresh the item list
+  } else {
+    alert('Error deleting item');
+  }
 }
 
-fetchTodos();
+// Load items when the page loads
+fetchItems();

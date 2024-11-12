@@ -4,20 +4,18 @@ services:
     build: ./frontend
     ports:
       - "3000:80"
-    depends_on:
-      - backend
 
   backend:
     build: ./backend
     ports:
       - "5000:5000"
-    environment:
-      - MONGO_URI=mongodb://database:27017/todo
     depends_on:
-      - database
+      - mongo
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/todos
 
-  database:
-    image: mongo:5.0
+  mongo:
+    image: mongo
     ports:
       - "27017:27017"
     volumes:

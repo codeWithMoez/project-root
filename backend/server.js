@@ -2,37 +2,48 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+// Create an Express app
 const app = express();
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
-const PORT = 5000;
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/todo";
+// Connect to MongoDB
+mongoose
+  .connect("mongodb://mongo:27017/crudapp", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((error) => console.error("Could not connect to MongoDB:", error));
 
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+// Define an Item model
+const Item = mongoose.model(
+  "Item",
+  new mongoose.Schema({
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+  })
+);
+
+// Routes for CRUD operations
+app.get("/items", async (req, res) => {
+  const items = await Item.find();
+  res.json(items);
 });
 
-const TodoSchema = new mongoose.Schema({ text: String });
-const Todo = mongoose.model("Todo", TodoSchema);
-
-app.get("/api/todos", async (req, res) => {
-  const todos = await Todo.find();
-  res.json(todos);
+app.post("/items", async (req, res) => {
+  const newItem = new Item(req.body);
+  await newItem.save();
+  res.status(201).json(newItem);
 });
 
-app.post("/api/todos", async (req, res) => {
-  const todo = new Todo({
-    text: req.body.text,
-  });
-  await todo.save();
-  res.json(todo);
+app.delete("/items/:id", async (req, res) => {
+  const item = await Item.findByIdAndDelete(req.params.id);
+  if (!item) return res.status(404).send("Item not found");
+  res.status(200).json(item);
 });
 
-app.delete("/api/todos/:id", async (req, res) => {
-  await Todo.findByIdAndDelete(req.params.id);
-  res.json({ message: "Todo deleted" });
+// Start the server
+app.listen(5000, () => {
+  console.log("Backend is running on port 5000");
 });
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
